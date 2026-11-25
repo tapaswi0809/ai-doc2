@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ai Doc - Healthcare Assistant</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation & Search Bar -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo-area" onclick="switchToTab('chat')">
+        <img class="app-logo-img" src="logo.jpg" alt="Ai Doc — Companion in Care">
+        <div class="logo-text">
+          <h1>Ai Doc</h1>
+          <span>Companion in Care</span>
+        </div>
+      </div>
+
+      <!-- Global Search Bar for instant user doubts -->
+      <div class="search-container">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="globalSearchInput" class="search-input" placeholder="Ask a health question or search a medicine..." onkeydown="if(event.key === 'Enter') askFromSearch(this.value)">
+          <button class="search-mic-btn" title="Voice Search / Ask Doubt" onclick="startVoiceInput('search')">🎙️</button>
+        </div>
+        <div id="searchDropdown" class="search-dropdown"></div>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="header-actions">
+        <select id="langSelector" class="lang-select" onchange="setAppLanguage(this.value);">
+          <option value="en-US">English (US)</option>
+          <option value="en-GB">English (UK)</option>
+          <option value="en-IN">English (India)</option>
+          <option value="hi-IN">Hindi (हिन्दी)</option>
+          <option value="es-ES">Spanish (Español)</option>
+          <option value="fr-FR">French (Français)</option>
+          <option value="de-DE">German (Deutsch)</option>
+          <option value="ar-SA">Arabic (العربية)</option>
+          <option value="bn-IN">Bengali (বাংলা)</option>
+          <option value="te-IN">Telugu (తెలుగు)</option>
+          <option value="ta-IN">Tamil (தமிழ்)</option>
+          <option value="mr-IN">Marathi (मराठी)</option>
+          <option value="gu-IN">Gujarati (ગુજરાતી)</option>
+          <option value="kn-IN">Kannada (ಕನ್ನಡ)</option>
+          <option value="ml-IN">Malayalam (മലയാളം)</option>
+          <option value="pa-IN">Punjabi (ਪੰਜਾਬੀ)</option>
+          <option value="zh-CN">Chinese (中文)</option>
+          <option value="ja-JP">Japanese (日本語)</option>
+          <option value="ko-KR">Korean (한국어)</option>
+          <option value="ru-RU">Russian (Русский)</option>
+          <option value="pt-BR">Portuguese (Português)</option>
+          <option value="it-IT">Italian (Italiano)</option>
+          <option value="tr-TR">Turkish (Türkçe)</option>
+          <option value="ur-PK">Urdu (اردو)</option>
+          <option value="nl-NL">Dutch (Nederlands)</option>
+          <option value="vi-VN">Vietnamese (Tiếng Việt)</option>
+          <option value="id-ID">Indonesian (Bahasa Indonesia)</option>
+          <option value="sw-KE">Swahili (Kiswahili)</option>
+        </select>
+        
+        <button class="btn-emergency" onclick="triggerEmergencyAlert('Emergency button pressed by user')">
+          🚨 Emergency (108 / 911)
+        </button>
+
+        <!-- Three Dots Settings & History Button in Top Right Corner -->
+        <button id="btnSettingsMenu" class="btn-settings-dots" title="Settings, History & Voice Controller" onclick="openSettingsModal()">
+          ⋮
+        </button>
+      </div>
+    </div>
+
+    <!-- AI Voice Assistant Banner -->
+    <div class="voice-bar">
+      <div class="voice-status-left">
+        <div class="sound-wave">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+        <span id="voiceStatusText">AI Voice Assistant Ready</span>
+      </div>
+      <div class="voice-controls">
+        <button class="btn-voice-tool" onclick="startAppTour()">📢 How to Use the App</button>
+        <button class="btn-voice-tool" onclick="readReportAloud()">🔊 Read Results Aloud</button>
+        <button class="btn-voice-tool" onclick="stopSpeaking()">⏹️ Stop Voice</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Body -->
+  <div class="app-container">
+    
+    <!-- Sidebar: Profile & Navigation -->
+    <aside class="sidebar">
+      
+      <!-- User Profile Card -->
+      <div class="profile-card">
+        <div class="profile-header">
+          <div class="profile-avatar" id="profileAvatar">👤</div>
+          <div class="profile-info">
+            <h3 id="profileName">Guest</h3>
+            <p id="profileAge">Not set • None</p>
+            <span id="profileAgeBadge" class="badge-adult">🧑 Health Mode</span>
+          </div>
+        </div>
+
+        <div class="profile-stats">
+          <div><span class="stat-label">Diet:</span> <span class="stat-val" id="profileFood">None</span></div>
+          <div><span class="stat-label">Allergies:</span> <span class="stat-val" id="profileAllergies">None</span></div>
+          <div><span class="stat-label">Conditions:</span> <span class="stat-val" id="profileConditions">None</span></div>
+          <div><span class="stat-label">Medicines:</span> <span class="stat-val" id="profileMeds">None</span></div>
+        </div>
+      </div>
+
+      <!-- Left Sidebar: Personalized Exercise & Physical Activities Bar -->
+      <div id="sidebarExerciseCard" class="sidebar-exercise-card">
+        <div class="sidebar-exercise-header">
+          <span class="sidebar-exercise-title">🏃 Physical Activities</span>
+          <span class="sidebar-exercise-tag" id="exerciseStatusTag">Personalized</span>
+        </div>
+        <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: -4px;">
+          Adapted to your test results &amp; reported symptoms:
+        </p>
+        <div id="sidebarExerciseList" style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <!-- Dynamically populated based on patient results and symptoms -->
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <div class="nav-card">
+        <div class="nav-title">Care Navigation</div>
+        <ul class="nav-list">
+          <li class="nav-item active" data-tab="chat" onclick="switchToTab('chat')">
+            <span class="nav-icon">💬</span> AI Health Assistant Chat
+          </li>
+          <li class="nav-item" data-tab="report" onclick="switchToTab('report')">
+            <span class="nav-icon">📊</span> Report & Symptom Scanner
+          </li>
+          <li class="nav-item" data-tab="diet" onclick="switchToTab('diet')">
+            <span class="nav-icon">🥗</span> Personalized Diet & Nutrition
+          </li>
+          <li class="nav-item" data-tab="schedule" onclick="switchToTab('schedule')">
+            <span class="nav-icon">⏰</span> Today Schedule & Reminders
+          </li>
+          <li class="nav-item" data-tab="body" onclick="switchToTab('body')">
+            <span class="nav-icon">🧍</span> Human Body Board (&lt;18 &amp; 18+)
+          </li>
+          <li class="nav-item" data-tab="nurse" onclick="switchToTab('nurse')">
+            <span class="nav-icon">👩‍⚕️</span> Book Home Nurse Sample Test
+          </li>
+          <li class="nav-item" data-tab="emergency" onclick="switchToTab('emergency')">
+            <span class="nav-icon">🏥</span> Nearby Hospitals &amp; Ambulance
+          </li>
+        </ul>
+      </div>
+
+      <!-- Quick Emergency Callout -->
+      <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: var(--radius-lg); padding: 1rem;">
+        <h4 style="color: #9f1239; font-size: 0.88rem; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+          ⚠️ Emergency Triage Rule
+        </h4>
+        <p style="font-size: 0.76rem; color: #881337; line-height: 1.4;">
+          If chest pain, severe shortness of breath, stroke signs, or fainting occurs, act immediately. We prioritize your immediate safety above all else.
+        </p>
+      </div>
+
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- TAB 1: Conversational AI Agent Chat -->
+      <section id="tab-chat" class="tab-pane active">
+        <div class="chat-container">
+          <div class="chat-header">
+            <div class="chat-header-info">
+              <span class="agent-status-indicator"></span>
+              <div>
+                <h2>Ai Doc Assistant</h2>
+                <span>Care guidance • No diagnosis • Strict doctor prescription respect</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <button class="btn-new-chat" onclick="startNewChat()" title="Start a fresh chat and archive current conversation to History">
+                ➕ New Chat
+              </button>
+              <button class="btn-chip" onclick="startAppTour()">📢 Guided Tour</button>
+            </div>
+          </div>
+
+          <div class="chat-body" id="chatBody">
+            <!-- Messages stream dynamically from app.js -->
+          </div>
+
+          <div class="chat-footer">
+            <div class="chat-input-bar">
+              <input type="text" id="chatInput" class="chat-input" placeholder="Type your answer, report details, or symptoms..." onkeydown="if(event.key === 'Enter') handleUserResponse(this.value)">
+              <button class="btn-chip" title="Speak Answer" onclick="startVoiceInput('chat')">🎙️</button>
+              <button class="btn-send" onclick="handleUserResponse(document.getElementById('chatInput').value)">Send ➔</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: Medical Report & Symptom Scanner -->
+      <section id="tab-report" class="tab-pane">
+        <div class="section-card">
+          <div class="section-header">
+            <h2>📄 Medical Report & Symptom Scanner</h2>
+            <span class="badge-status badge-normal">OCR & Lab Parser</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <!-- Upload Box -->
+            <div style="border: 2px dashed var(--border); border-radius: var(--radius-md); padding: 1.5rem; text-align: center; background: #fafaf9;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">📤</div>
+              <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;">Upload Report (Photo or PDF)</h4>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;">Supports Blood Tests, Lipid Panels, Sugar, CBC & Thyroid reports</p>
+              <input type="file" id="reportFileInput" accept="image/*,.pdf" style="display: none;" onchange="handleReportFile(this.files[0]);">
+              <button class="btn-send" style="margin: 0 auto;" onclick="document.getElementById('reportFileInput').click()">Choose File</button>
+            </div>
+
+            <!-- Preloaded Test Reports from HuggingFace dataset -->
+          <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;">
+              <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--primary-dark);">Demo reports (illustrative examples, not your results):</h4>
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <button class="btn-chip" style="text-align: left; width: 100%;" onclick="loadSampleReport(0)">
+                  📊 Sample 1: Diabetes &amp; Stage-2 Hypertension (Elevated Sugar, BP, Lipids)
+                </button>
+                <button class="btn-chip" style="text-align: left; width: 100%;" onclick="loadSampleReport(1)">
+                  🩸 Sample 2: Iron Deficiency Anemia (Low Hemoglobin &amp; Ferritin)
+                </button>
+                <button class="btn-chip" style="text-align: left; width: 100%;" onclick="loadSampleReport(2)">
+                  🦋 Sample 3: Thyroid &amp; Metabolism Screening (High TSH)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Symptom Typing Box -->
+          <div style="background: #f1f5f9; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.35rem;">Don't have a lab report? Type your symptoms:</h4>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="symptomInputBox" class="chat-input" placeholder="e.g., Feeling severe fatigue, dizziness on standing, cold hands for 2 weeks...">
+              <button class="btn-send" onclick="processTypedSymptoms(document.getElementById('symptomInputBox').value)">Analyze Symptoms</button>
+            </div>
+          </div>
+
+          <!-- Dynamic Report Results Container -->
+          <div id="reportResultsArea">
+            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+              Select a sample report above or upload your document to view the parameter-by-parameter analysis.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: Personalized Diet Plan -->
+      <section id="tab-diet" class="tab-pane">
+        <div id="dietPlanArea">
+          <!-- Populated by app.js based on report or general wellness -->
+        </div>
+      </section>
+
+      <!-- TAB 4: Today Health Schedule & Reminders -->
+      <section id="tab-schedule" class="tab-pane">
+        <div id="todayScheduleArea">
+          <!-- Populated by app.js -->
+        </div>
+      </section>
+
+      <!-- TAB 5: Interactive Human Body Board -->
+      <section id="tab-body" class="tab-pane">
+        <!-- Dedicated Body Explorer Search Bar -->
+        <div class="body-search-container">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
+            <h3 style="font-size: 1.05rem; color: var(--primary-dark); display: flex; align-items: center; gap: 0.4rem;">
+              🔍 Body Explorer &amp; Organ Doubt Search
+            </h3>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">Clears doubts for both Kids (<18) &amp; Adults (18+)</span>
+          </div>
+
+          <div class="body-search-input-wrap">
+            <input type="text" id="bodySearchInput" class="chat-input" placeholder="Search any body part, organ, or doubt (e.g., 'heart', 'why do we sneeze', 'brain', 'kidneys', 'digestion')..." onkeydown="if(event.key === 'Enter') handleBodySearch(this.value)">
+            <button class="btn-chip" title="Voice Search Doubt" onclick="startBodyVoiceSearch()">🎙️ Voice Search</button>
+            <button class="btn-send" onclick="handleBodySearch(document.getElementById('bodySearchInput').value)">Ask Body AI ➔</button>
+          </div>
+
+          <div class="body-search-chips" id="bodySearchChips">
+            <span style="font-size: 0.76rem; color: var(--text-muted); align-self: center; margin-right: 0.35rem;">Popular Doubts:</span>
+            <button class="body-chip" onclick="handleBodySearch('why do we sneeze')">🤧 Why do we sneeze?</button>
+            <button class="body-chip" onclick="handleBodySearch('how does the heart pump')">❤️ How does the heart pump?</button>
+            <button class="body-chip" onclick="handleBodySearch('why do bones crack')">🦴 Why do bones crack?</button>
+            <button class="body-chip" onclick="handleBodySearch('stomach rumbling')">🍎 Why does tummy rumble?</button>
+            <button class="body-chip" onclick="handleBodySearch('kidneys filtration')">💧 How do kidneys filter?</button>
+            <button class="body-chip" onclick="handleBodySearch('brain sleep dreams')">🧠 Why do we dream &amp; sleep?</button>
+          </div>
+
+          <div id="bodySearchResultArea"></div>
+        </div>
+
+        <div id="bodyBoardArea">
+          <!-- Populated by app.js (Kids mode vs Adult mode) -->
+        </div>
+      </section>
+
+      <!-- TAB 6: Home Nurse Sample Test Booking -->
+      <section id="tab-nurse" class="tab-pane">
+        <div class="section-card">
+          <div class="section-header">
+            <h2>👩‍⚕️ Book a Home Healthcare Nurse</h2>
+            <span class="badge-status badge-normal">Doorstep Sample Collection &amp; Vitals</span>
+          </div>
+
+          <div class="nurse-grid">
+            <form onsubmit="handleNurseBooking(event)">
+              <div class="form-group">
+                <label>Select Required Diagnostic Tests:</label>
+                <select id="nurseTests" class="form-control">
+                  <option>Fasting Blood Sugar + HbA1c + Lipid Panel</option>
+                  <option>Complete Blood Count (CBC) + Iron &amp; Ferritin</option>
+                  <option>Comprehensive Metabolic Panel + Kidney Function</option>
+                  <option>Thyroid Profile (TSH, Free T3, Free T4)</option>
+                  <option>Routine Vitals Checkup (BP, Blood Glucose, SpO2, ECG at Home)</option>
+                </select>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div class="form-group">
+                  <label>State / Region:</label>
+                  <input type="text" id="nurseState" class="form-control" required placeholder="e.g. California / Delhi / Ontario">
+                </div>
+                <div class="form-group">
+                  <label>City:</label>
+                  <input type="text" id="nurseCity" class="form-control" required placeholder="e.g. Los Angeles / Mumbai / Toronto">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Area / Neighborhood / Locality:</label>
+                <input type="text" id="nurseArea" class="form-control" required placeholder="e.g. Downtown / Sector 14 / Midtown">
+              </div>
+
+              <div class="form-group">
+                <label>Full Doorstep Address &amp; Landmark:</label>
+                <input type="text" id="nurseAddress" class="form-control" required placeholder="House/Apartment #, Street, Landmark">
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div class="form-group">
+                  <label>Preferred Date:</label>
+                  <input type="date" id="nurseDate" class="form-control" required value="2026-11-21">
+                </div>
+                <div class="form-group">
+                  <label>Preferred Time Slot:</label>
+                  <select id="nurseTime" class="form-control">
+                    <option>Early Morning 07:00 AM - 09:00 AM (Recommended for Fasting)</option>
+                    <option>Morning 09:00 AM - 11:00 AM</option>
+                    <option>Afternoon 02:00 PM - 04:00 PM</option>
+                    <option>Evening 05:00 PM - 07:00 PM</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" class="btn-send" style="width: 100%; justify-content: center; padding: 0.85rem; font-size: 0.95rem;">
+                ✅ Confirm Home Nurse Booking
+              </button>
+            </form>
+
+            <div>
+              <div class="nurse-info-box">
+                <h3>Safe, Certified &amp; Convenient Care</h3>
+                <ul class="nurse-features">
+                  <li>Enter your preferred details to prepare a request for a licensed local provider.</li>
+                  <li>This demo does not verify providers, confirm bookings, or collect samples.</li>
+                  <li>When you receive results, enter values and the lab's reference ranges for a general explanation.</li>
+                </ul>
+              </div>
+
+              <div id="nurseBookingConfirmation"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 7: Nearby Emergency Hospitals & Ambulance -->
+      <section id="tab-emergency" class="tab-pane">
+        <div class="section-card">
+          <div class="section-header">
+            <h2 style="color: #991b1b;">🏥 Nearby Hospitals &amp; Emergency Trauma Centers</h2>
+            <button class="btn-emergency" onclick="window.location.href='tel:112'">
+              📞 Call Emergency Dispatch
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem; background: #ffffff;">
+              <span class="badge-status badge-high">Emergency care</span>
+              <h3 style="font-size: 1.05rem; margin-top: 0.5rem; margin-bottom: 0.25rem;">Find a nearby emergency department</h3>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">Hospital locations depend on your location. This demo does not know where you are.</p>
+              <div style="font-size: 0.82rem; color: #991b1b; font-weight: 600; margin-bottom: 0.75rem;">For an emergency, call your local emergency number now.</div>
+              <button class="btn-danger-outline" style="width: 100%;" onclick="window.open('https://www.google.com/maps/search/emergency+room+near+me','_blank','noopener');">
+                🏥 Search Maps for Emergency Rooms
+              </button>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem; background: #ffffff;">
+              <span class="badge-status badge-high">Emergency number</span>
+              <h3 style="font-size: 1.05rem; margin-top: 0.5rem; margin-bottom: 0.25rem;">Emergency numbers</h3>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">Use the emergency number for your current location.</p>
+              <div style="font-size: 0.82rem; color: #991b1b; font-weight: 600; margin-bottom: 0.75rem;">112 may not be available in all locations.</div>
+              <button class="btn-danger-outline" style="width: 100%;" onclick="window.location.href='tel:112'">
+                📞 Call 112 (where available)
+              </button>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem; background: #ffffff;">
+              <span class="badge-status badge-normal">Emergency number</span>
+              <h3 style="font-size: 1.05rem; margin-top: 0.5rem; margin-bottom: 0.25rem;">United States / Canada</h3>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">If you are in the U.S. or Canada, call 911.</p>
+              <div style="font-size: 0.82rem; color: #991b1b; font-weight: 600; margin-bottom: 0.75rem;">Call only if you are in the U.S. or Canada.</div>
+              <button class="btn-danger-outline" style="width: 100%;" onclick="window.location.href='tel:911'">
+                📞 Call 911
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Emergency Warning Modal -->
+  <div id="emergencyModal" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close-btn" onclick="closeEmergencyModal()">×</button>
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+        <span style="font-size: 2.2rem;">🚨</span>
+        <div>
+          <h2 style="color: #991b1b; font-size: 1.3rem;">Act Now: Immediate Medical Attention Required</h2>
+          <span style="font-size: 0.82rem; color: #7f1d1d; font-weight: 600;">Safety First • Immediate Clinical Triage</span>
+        </div>
+      </div>
+
+      <div style="background: #fee2e2; border-left: 4px solid var(--danger); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem;">
+        <p id="emergencyReason" style="color: #7f1d1d; font-size: 0.9rem; font-weight: 500;"></p>
+        <p style="color: #991b1b; font-size: 0.82rem; margin-top: 0.5rem;">
+          Do not attempt to drive yourself. Stay calm, sit down, and keep warm while assistance is arriving.
+        </p>
+      </div>
+
+      <h3 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Immediate Options:</h3>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <button class="btn-emergency" style="justify-content: center; padding: 0.85rem; font-size: 1rem;" onclick="window.location.href='tel:112'">
+          📞 Call 112 (where available) or your local emergency number
+        </button>
+        <button class="btn-danger-outline" style="padding: 0.75rem;" onclick="closeEmergencyModal(); switchToTab('emergency');">
+          🏥 View Directions to Nearest Emergency Room
+        </button>
+        <button class="btn-chip" style="align-self: center;" onclick="closeEmergencyModal()">
+          I am in safe care / Dismiss
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings & History Modal (Accessed via Top Right Three Dots ⋮) -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 650px;">
+      <button class="modal-close-btn" onclick="closeSettingsModal()">×</button>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+        <span style="font-size: 1.6rem;">⚙️</span>
+        <h2 style="font-size: 1.25rem; font-weight: 700;">Settings &amp; Chat History</h2>
+      </div>
+
+      <!-- Settings Navigation Tabs -->
+      <div class="settings-tabs">
+        <button class="settings-tab-btn active" id="tabBtnHistory" onclick="switchSettingsTab('history')">
+          📜 Chat History (<span id="historyCountBadge">0</span>)
+        </button>
+        <button class="settings-tab-btn" id="tabBtnVoice" onclick="switchSettingsTab('voice')">
+          🔊 Voice Controller
+        </button>
+        <button class="settings-tab-btn" id="tabBtnLanguage" onclick="switchSettingsTab('language')">
+          🌐 All Languages
+        </button>
+      </div>
+
+      <!-- Tab 1: Chat History -->
+      <div id="settingsPaneHistory" class="settings-tab-content active">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <p style="font-size: 0.82rem; color: var(--text-muted);">
+            Previous conversations saved automatically when you start a <strong>New Chat</strong>.
+          </p>
+          <button class="btn-delete-chat" onclick="clearAllChatHistory()">Clear All</button>
+        </div>
+        <div id="historyListContainer" class="history-list">
+          <!-- Populated dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- Tab 2: Voice Controller (Adjust Voice & ON/OFF system) -->
+      <div id="settingsPaneVoice" class="settings-tab-content">
+        <!-- Voice ON/OFF Toggle -->
+        <div class="voice-switch-box">
+          <div>
+            <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--text-main);">AI Voice Assistant Audio</h4>
+            <p style="font-size: 0.78rem; color: var(--text-muted);">Enable or mute all speech synthesis narration</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="voiceToggleCheckbox" checked onchange="toggleVoiceAudio(this.checked)">
+            <span class="slider-toggle"></span>
+          </label>
+        </div>
+
+        <!-- Voice Speed / Rate -->
+        <div class="voice-slider-group">
+          <div class="voice-slider-header">
+            <span>Speech Speed (Rate):</span>
+            <span id="voiceRateBadge" class="voice-slider-badge">1.0x</span>
+          </div>
+          <input type="range" id="voiceRateSlider" class="voice-range-input" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateVoiceRate(this.value)">
+          <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
+            <span>0.5x (Slow)</span>
+            <span>1.0x (Normal)</span>
+            <span>2.0x (Fast)</span>
+          </div>
+        </div>
+
+        <!-- Voice Pitch -->
+        <div class="voice-slider-group">
+          <div class="voice-slider-header">
+            <span>Voice Pitch:</span>
+            <span id="voicePitchBadge" class="voice-slider-badge">1.0</span>
+          </div>
+          <input type="range" id="voicePitchSlider" class="voice-range-input" min="0.5" max="1.5" step="0.1" value="1.0" oninput="updateVoicePitch(this.value)">
+          <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
+            <span>0.5 (Deeper)</span>
+            <span>1.0 (Natural)</span>
+            <span>1.5 (Higher)</span>
+          </div>
+        </div>
+
+        <!-- Voice Volume -->
+        <div class="voice-slider-group">
+          <div class="voice-slider-header">
+            <span>Audio Volume:</span>
+            <span id="voiceVolumeBadge" class="voice-slider-badge">100%</span>
+          </div>
+          <input type="range" id="voiceVolumeSlider" class="voice-range-input" min="0" max="100" step="5" value="100" oninput="updateVoiceVolume(this.value)">
+        </div>
+
+        <!-- Available System Voices -->
+        <div class="form-group" style="margin-top: 1rem;">
+          <label style="font-size: 0.82rem; font-weight: 600;">Select Device System Voice:</label>
+          <select id="systemVoiceSelect" class="form-control" onchange="updateSelectedVoice(this.value)">
+            <option value="">Default AI Voice</option>
+          </select>
+        </div>
+
+        <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
+          <button class="btn-send" onclick="testVoiceAudio()">🔊 Test Voice Output</button>
+          <button class="btn-chip" onclick="resetVoiceDefaults()">Reset Defaults</button>
+        </div>
+      </div>
+
+      <!-- Tab 3: Complete Language Selection with Search Bar -->
+      <div id="settingsPaneLanguage" class="settings-tab-content">
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          Search or choose your preferred language. The assistant will speak, guide, and formulate schedules in this language:
+        </p>
+
+        <!-- Search bar in Language Selection -->
+        <div class="lang-search-wrap">
+          <span class="lang-search-icon">🔍</span>
+          <input type="text" id="langSearchInput" class="lang-search-input" placeholder="Search language (e.g. Hindi, Spanish, Telugu, French, Arabic)..." oninput="filterLanguages(this.value)">
+        </div>
+
+        <!-- Filterable Grid of All Languages -->
+        <div id="langGridContainer" class="lang-grid">
+          <!-- Populated dynamically by app.js -->
+        </div>
+
+        <div style="background: #f0fdfa; border: 1px solid #99f6e4; padding: 0.85rem; border-radius: var(--radius-sm); font-size: 0.8rem; color: #134e4a; margin-top: 1rem;">
+          ℹ️ Voice synthesis will automatically seek native accents matching your selected regional dialect.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Permission Prompt Modal (First-time visitors) -->
+  <div id="notifPermissionModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 480px; text-align: center;">
+      <div style="font-size: 2.8rem; margin-bottom: 0.5rem;">🔔</div>
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--primary-dark);">
+        Enable Ai Doc Care Reminders?
+      </h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.25rem;">
+        Ai Doc can show habit reminders in this browser. It does not create medicine timings unless they are entered exactly as prescribed.
+        <br><br>
+        <em>(Note: Even if you decline browser notifications, our compulsory in-app audio &amp; visual alerts will always remind you so you never miss a dose!)</em>
+      </p>
+      <div style="display: flex; gap: 0.75rem; justify-content: center;">
+        <button class="btn-send" style="padding: 0.65rem 1.4rem;" onclick="acceptNotificationPermission()">
+          🔔 Allow Reminders
+        </button>
+        <button class="btn-chip" style="padding: 0.65rem 1.2rem;" onclick="dismissNotificationPrompt()">
+          Maybe Later
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Ai Doc provides general health information. It does not diagnose or prescribe. Please confirm medical decisions with a qualified clinician.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script>window.AIDOC_CONTEXT = window.AIDOC_CONTEXT || {};</script>
+  <script src="datasets_data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
